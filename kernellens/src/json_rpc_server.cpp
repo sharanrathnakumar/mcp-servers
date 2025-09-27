@@ -4,6 +4,7 @@
 
 #include "syscall_tracer.h"
 #include "network_monitor.h"
+#include "behavior_explainer.h"
 
 using json = nlohmann::json;
 
@@ -39,7 +40,14 @@ std::string JsonRpcServer::handle_request(const std::string& request) {
             resp["result"] = events;
         }
     } else if (method == "explain_behavior") {
-        resp["result"] = "behavior explanation";
+        if (!req.contains("params") || !req["params"].contains("trace_log")) {
+            resp["error"] = "Missing trace_log parameter";
+        } else {
+            std::string trace_log = req["params"]["trace_log"];
+            BehaviorExplainer explainer;
+            auto explanation = explainer.explain_behavior(trace_log);
+            resp["result"] = explanation;
+        }
     } else {
         resp["error"] = "Unknown method";
     }
