@@ -3,6 +3,7 @@
 #include <nlohmann/json.hpp>
 
 #include "syscall_tracer.h"
+#include "network_monitor.h"
 
 using json = nlohmann::json;
 
@@ -29,7 +30,14 @@ std::string JsonRpcServer::handle_request(const std::string& request) {
             resp["result"] = syscalls;
         }
     } else if (method == "monitor_network") {
-        resp["result"] = "network activity for pid";
+        if (!req.contains("params") || !req["params"].contains("pid")) {
+            resp["error"] = "Missing pid parameter";
+        } else {
+            pid_t pid = req["params"]["pid"];
+            NetworkMonitor monitor;
+            auto events = monitor.monitor_network(pid);
+            resp["result"] = events;
+        }
     } else if (method == "explain_behavior") {
         resp["result"] = "behavior explanation";
     } else {
