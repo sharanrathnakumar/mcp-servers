@@ -2,6 +2,8 @@
 #include <iostream>
 #include <nlohmann/json.hpp>
 
+#include "syscall_tracer.h"
+
 using json = nlohmann::json;
 
 void JsonRpcServer::start(int port) {
@@ -18,7 +20,14 @@ std::string JsonRpcServer::handle_request(const std::string& request) {
     }
     std::string method = req["method"];
     if (method == "list_syscalls") {
-        resp["result"] = "syscalls for pid";
+        if (!req.contains("params") || !req["params"].contains("pid")) {
+            resp["error"] = "Missing pid parameter";
+        } else {
+            pid_t pid = req["params"]["pid"];
+            SyscallTracer tracer;
+            auto syscalls = tracer.list_syscalls(pid);
+            resp["result"] = syscalls;
+        }
     } else if (method == "monitor_network") {
         resp["result"] = "network activity for pid";
     } else if (method == "explain_behavior") {
